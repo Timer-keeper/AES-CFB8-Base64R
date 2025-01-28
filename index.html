@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>解密</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="Decryptor.js"></script>
+</head>
+<body>
+    <h1>加密消息解密工具</h1>
+    <textarea id="input" placeholder="输入加密消息"></textarea>
+    <button onclick="handleDecrypt()">解密</button>
+    <div id="result"></div>
+
+    <script>
+        function handleDecrypt() {
+            const encrypted = document.getElementById('input').value;
+            try {
+                const result = decrypt(encrypted);
+                document.getElementById('result').innerHTML = result;
+            } catch (e) {
+                alert("解密失败: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
