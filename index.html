@@ -1,22 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>解密</title>
+    <title>数据解密平台</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/seedrandom@3.0.5/seedrandom.min.js"></script>
     <script src="Decryptor.js"></script>
 </head>
 <body>
     <h1>加密消息解密工具</h1>
-    <textarea id="input" placeholder="输入加密消息"></textarea>
-    <button onclick="handleDecrypt()">解密</button>
-    <div id="result"></div>
+    <div>
+        <textarea id="input" placeholder="输入加密消息" style="width:500px;height:200px"></textarea>
+    </div>
+    <div>
+        <input type="password" id="key" placeholder="输入AES密钥">
+        <button onclick="handleDecrypt()">解密</button>
+    </div>
+    <pre id="result"></pre>
 
     <script>
         function handleDecrypt() {
-            const encrypted = document.getElementById('input').value;
+            const encrypted = document.getElementById('input').value.trim();
+            const key = document.getElementById('key').value.trim();
+            
+            if (!encrypted || !key) {
+                alert("请填写加密消息和密钥");
+                return;
+            }
+
             try {
-                const result = decrypt(encrypted);
-                document.getElementById('result').innerHTML = result;
+                const result = decrypt(encrypted, key);
+                document.getElementById('result').textContent = result;
             } catch (e) {
                 alert("解密失败: " + e.message);
             }
