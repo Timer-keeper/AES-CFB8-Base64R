@@ -1,25 +1,79 @@
-function unshiftBase64R(base64Str) {
-    // URL安全型Base64还原（按需修改替换规则）
-    return base64Str.replace(/-/g, '+').replace(/_/g, '/');
+class JavaRandom {
+    constructor(seed) {
+        this.seed = (seed ^ 0x5DEECE66Dn) & ((1n << 48n) - 1n);
+    }
+    
+    next(bits) {
+        this.seed = (this.seed * 0x5DEECE66Dn + 0xBn) & ((1n << 48n) - 1n);
+        return Number(this.seed >> (48n - BigInt(bits)));
+    }
+    
+    nextBytes(bytes) {
+        for (let i = 0; i < bytes.length; i++) {
+            if (i % 4 === 0) {
+                const rnd = this.next(32);
+                bytes[i] = rnd >>> 24;
+                if (++i >= bytes.length) break;
+                bytes[i] = (rnd >>> 16) & 0xFF;
+                if (++i >= bytes.length) break;
+                bytes[i] = (rnd >>> 8) & 0xFF;
+                if (++i >= bytes.length) break;
+                bytes[i] = rnd & 0xFF;
+            }
+        }
+    }
 }
 
-function decrypt(encryptedMessage) {
-    // 1. Base64R反向替换
+// 完整Base64R反向映射
+const base64ReverseMap = {
+    /* 此处填入完整的字符映射关系 */
+    '!': 'A', '"': 'B', '#': 'C', '$': 'D', '%': 'E', '¼': 'F', '\'': 'G',
+    '(': 'H', ')': 'I', ',': 'J', '-': 'K', '.': 'L', ':': 'M', ';': 'N',
+    // ...（完整映射内容稍后完成（））
+    '»': '/', '¿': '='
+};
+
+function unshiftBase64R(base64Str) {
+    return Array.from(base64Str).map(c => base64ReverseMap[c] || c).join('');
+}
+
+function javaRandomBytes(nonce, length) {
+    const bytes = new Uint8Array(length);
+    const random = new JavaRandom(BigInt(nonce));
+    random.nextBytes(bytes);
+    return bytes;
+}
+
+function bytesToLong(bytes) {
+    if (bytes.length !== 8) throw new Error("Invalid nonce length");
+    const buffer = new DataView(bytes.buffer);
+    return buffer.getBigInt64(0, false); // 大端序
+}
+
+function decrypt(encryptedMessage, keyStr) {
+    // 1. Base64R处理
     const base64Standard = unshiftBase64R(encryptedMessage);
     
     // 2. Base64解码
     const rawData = CryptoJS.enc.Base64.parse(base64Standard);
     const bytes = new Uint8Array(rawData.words.buffer);
     
-    // 3. 分离IV（前16字节）
-    if (bytes.length < 16) throw new Error("Invalid encrypted message");
-    const iv = bytes.slice(0, 16);
-    const ciphertext = bytes.slice(16);
+    // 3. 提取nonce（前8字节）
+    if (bytes.length < 8) throw new Error("消息格式错误");
+    const nonceBytes = bytes.slice(0, 8);
+    const encryptedBytes = bytes.slice(8);
     
-    // 4. AES解密配置
-    const key = CryptoJS.enc.Utf8.parse("YOUR_SECRET_KEY"); // 替换为实际密钥
+    // 4. 生成IV
+    const nonce = bytesToLong(nonceBytes);
+    const iv = javaRandomBytes(nonce, 16);
+
+    // 5. 准备解密参数
+    const key = CryptoJS.enc.Utf8.parse(keyStr);
+    const ciphertext = CryptoJS.lib.WordArray.create(encryptedBytes);
+    
+    // 6. 执行解密
     const decrypted = CryptoJS.AES.decrypt(
-        { ciphertext: CryptoJS.lib.WordArray.create(ciphertext) },
+        { ciphertext: ciphertext },
         key,
         {
             iv: CryptoJS.lib.WordArray.create(iv),
@@ -29,5 +83,6 @@ function decrypt(encryptedMessage) {
         }
     );
     
+    // 7. 返回UTF8字符串
     return decrypted.toString(CryptoJS.enc.Utf8);
 }
