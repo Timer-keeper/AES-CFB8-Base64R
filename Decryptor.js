@@ -69,15 +69,17 @@ function uint8ArrayToWordArray(u8Array) {
 }
 
 function decrypt(encryptedMessage, keyStr) {
-    // 解码Base64密钥
-    const decodedKey = CryptoJS.enc.Base64.parse(keyStr);
+     // 调试输出原始加密消息
+    console.log("原始加密消息:", encryptedMessage);
 
     // 1. Base64R反转
     const base64Standard = unshiftBase64R(encryptedMessage);
+    console.log("Base64标准字符串:", base64Standard); // 检查转换结果
 
     // 2. Base64解码原始数据
     const rawData = CryptoJS.enc.Base64.parse(base64Standard);
     const bytes = new Uint8Array(rawData.words.buffer);
+    console.log("解码后字节长度:", bytes.length); // 检查长度是否≥8
 
     // 3. 提取nonce和加密数据
     if (bytes.length < 8) throw new Error("消息格式错误");
