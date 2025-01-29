@@ -56,6 +56,9 @@ function bytesToLong(bytes) {
 }
 
 function decrypt(encryptedMessage, keyStr) {
+    // Decode the Base64 encoded key
+    const decodedKey = CryptoJS.enc.Base64.parse(keyStr);
+
     // 1. Base64R处理
     const base64Standard = unshiftBase64R(encryptedMessage);
     
@@ -73,7 +76,7 @@ function decrypt(encryptedMessage, keyStr) {
     const iv = javaRandomBytes(nonce, 16);
 
     // 5. 准备解密参数
-    const key = CryptoJS.enc.Utf8.parse(keyStr);
+    const key = CryptoJS.lib.WordArray.create(decodedKey.words);
     const ciphertext = CryptoJS.lib.WordArray.create(encryptedBytes);
     
     // 6. 执行解密
