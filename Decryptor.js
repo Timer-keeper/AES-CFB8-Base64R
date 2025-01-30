@@ -1,6 +1,6 @@
 class JavaRandom {
     constructor(seed) {
-        this.seed = (seed ^ 0x5DEECE66Dn) & ((1n << 48n) - 1n);
+        this.seed = (seed ^ 0x0005DEECE66Dn) & ((1n << 48n) - 1n);
     }
 
     next(bits) {
