@@ -69,35 +69,47 @@ function uint8ArrayToWordArray(u8Array) {
 }
 
 function decrypt(encryptedMessage, keyStr) {
-     // 调试输出原始加密消息
     console.log("原始加密消息:", encryptedMessage);
 
     // 1. Base64R反转
     const base64Standard = unshiftBase64R(encryptedMessage);
-    console.log("Base64标准字符串:", base64Standard); // 检查转换结果
+    console.log("Base64标准字符串:", base64Standard);
 
     // 2. Base64解码原始数据
     const rawData = CryptoJS.enc.Base64.parse(base64Standard);
-    const bytes = new Uint8Array(rawData.words.buffer);
-    console.log("解码后字节长度:", bytes.length); // 检查长度是否≥8
+    console.log("Base64解码后的WordArray:", rawData); // 调试输出
+
+    // 修复字节转换：手动处理WordArray的字节
+    const bytes = new Uint8Array(rawData.sigBytes);
+    for (let i = 0; i < rawData.sigBytes; i++) {
+        bytes[i] = (rawData.words[Math.floor(i / 4)] >>> (24 - (i % 4) * 8)) & 0xFF;
+    }
+    console.log("解码后字节数组:", bytes);
+    console.log("解码后字节长度:", bytes.length);
 
     // 3. 提取nonce和加密数据
     if (bytes.length < 8) throw new Error("消息格式错误");
     const nonceBytes = bytes.slice(0, 8);
     const encryptedBytes = bytes.slice(8);
+    console.log("Nonce字节:", nonceBytes);
+    console.log("加密数据字节:", encryptedBytes);
 
     // 4. 生成IV
     const nonce = bytesToLong(nonceBytes);
+    console.log("Nonce值:", nonce.toString());
     const iv = javaRandomBytes(nonce, 16);
+    console.log("IV字节:", iv);
 
     // 转换IV和加密数据为WordArray
     const ivWA = uint8ArrayToWordArray(iv);
     const ciphertext = uint8ArrayToWordArray(encryptedBytes);
 
     // 5. 解密参数
-    const key = CryptoJS.lib.WordArray.create(decodedKey.words);
+    const decodedKey = CryptoJS.enc.Base64.parse(keyStr); // 确保密钥解析正确
+    console.log("密钥字节长度:", decodedKey.sigBytes); // 检查是否为16/24/32字节
+    const key = decodedKey;
 
-    // 6. 执行解密（修正CFB8模式）
+    // 6. 执行解密
     const decrypted = CryptoJS.AES.decrypt(
         { ciphertext: ciphertext },
         key,
@@ -105,7 +117,7 @@ function decrypt(encryptedMessage, keyStr) {
             iv: ivWA,
             mode: CryptoJS.mode.CFB,
             padding: CryptoJS.pad.NoPadding,
-            segmentSize: 8 // 关键修正：CFB8模式
+            segmentSize: 8
         }
     );
 
