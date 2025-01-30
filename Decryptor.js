@@ -9,17 +9,16 @@ class JavaRandom {
     }
 
     nextBytes(bytes) {
-        for (let i = 0; i < bytes.length; i++) {
-            if (i % 4 === 0) {
-                const rnd = this.next(32);
-                bytes[i] = rnd >>> 24;
-                if (++i >= bytes.length) break;
-                bytes[i] = (rnd >>> 16) & 0xFF;
-                if (++i >= bytes.length) break;
-                bytes[i] = (rnd >>> 8) & 0xFF;
-                if (++i >= bytes.length) break;
-                bytes[i] = rnd & 0xFF;
-            }
+        let i = 0;
+        while (i < bytes.length) {
+            const rnd = this.next(32);
+            bytes[i++] = (rnd >>> 24) & 0xFF;
+            if (i >= bytes.length) break;
+            bytes[i++] = (rnd >>> 16) & 0xFF;
+            if (i >= bytes.length) break;
+            bytes[i++] = (rnd >>> 8) & 0xFF;
+            if (i >= bytes.length) break;
+            bytes[i++] = rnd & 0xFF;
         }
     }
 }
