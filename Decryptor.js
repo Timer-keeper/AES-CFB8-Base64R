@@ -9,20 +9,21 @@ class JavaRandom {
     }
 
     nextBytes(bytes) {
-        let i = 0;
-        while (i < bytes.length) {
-            const rnd = this.next(32);
-            bytes[i++] = (rnd >>> 24) & 0xFF;
-            if (i >= bytes.length) break;
-            bytes[i++] = (rnd >>> 16) & 0xFF;
-            if (i >= bytes.length) break;
-            bytes[i++] = (rnd >>> 8) & 0xFF;
-            if (i >= bytes.length) break;
-            bytes[i++] = rnd & 0xFF;
+        for (let i = 0; i < bytes.length; i++) {
+            if (i % 4 === 0) {
+                const rnd = this.next(32);
+                // 大端序填充
+                bytes[i] = rnd >>> 24;
+                if (++i >= bytes.length) break;
+                bytes[i] = (rnd >>> 16) & 0xFF;
+                if (++i >= bytes.length) break;
+                bytes[i] = (rnd >>> 8) & 0xFF;
+                if (++i >= bytes.length) break;
+                bytes[i] = rnd & 0xFF;
+            }
         }
     }
 }
-
 // Base64R反向映射表
 const base64ReverseMap = {
     '!': 'A', '"': 'B', '#': 'C', '$': 'D', '%': 'E', '¼': 'F', '\'': 'G',
@@ -119,6 +120,8 @@ function decrypt(encryptedMessage, keyStr) {
             segmentSize: 8
         }
     );
+    const hex = decrypted.toString(CryptoJS.enc.Hex);
+    console.log("解密后的Hex:",hex);
 
     // 7. 返回UTF8字符串
     return decrypted.toString(CryptoJS.enc.Utf8);
